@@ -1,6 +1,5 @@
 const axios = require('axios');
 
-// ========== HELPERS ==========
 function getUptime() {
     const uptime = process.uptime();
     const hours = Math.floor(uptime / 3600);
@@ -10,7 +9,7 @@ function getUptime() {
 }
 
 // ========== MENU COMMAND ==========
-module.exports = {
+const menuCmd = {
     name: 'menu',
     triggers: ['menu', 'allmenu', 'help'],
     async execute(sock, m, args, config) {
@@ -36,29 +35,26 @@ module.exports = {
 ╚══════════════════════╝`;
 
         try {
-            // Fetch image from your link with timeout
+            // تصویر کا لنک (آپ نے دیا تھا)
             const imageUrl = 'https://files.catbox.moe/bz29bv.jpg';
             const response = await axios.get(imageUrl, { 
                 responseType: 'arraybuffer',
                 timeout: 10000 
             });
-            
-            // Send image with menu text as caption
             await sock.sendMessage(from, {
                 image: Buffer.from(response.data),
                 caption: menuText
             }, { quoted: m });
-            
         } catch (error) {
-            // If image fails, send only text (NO ERROR WILL BE SHOWN TO USER)
-            console.log('⚠️ Image fetch failed, sending text menu only.');
+            // اگر تصویر نہ آئی تو صرف متن بھیجیں، کوئی Error نہیں دکھے گا
+            console.log('⚠️ Image fetch failed, sending text only.');
             await sock.sendMessage(from, { text: menuText }, { quoted: m });
         }
     }
 };
 
 // ========== ALIVE COMMAND ==========
-module.exports = {
+const aliveCmd = {
     name: 'alive',
     triggers: ['alive'],
     async execute(sock, m, args, config) {
@@ -69,15 +65,17 @@ module.exports = {
 };
 
 // ========== PING COMMAND ==========
-module.exports = {
+const pingCmd = {
     name: 'ping',
     triggers: ['ping'],
     async execute(sock, m, args, config) {
         const from = m.key.remoteJid;
         const start = Date.now();
-        await sock.sendMessage(from, { text: '🏓 Pinging...' }, { quoted: m });
+        // پہلا میسج
+        const sentMsg = await sock.sendMessage(from, { text: '🏓 Pinging...' }, { quoted: m });
         const end = Date.now();
         const ms = end - start;
+        // دوسرا میسج (پونگ)
         await sock.sendMessage(from, { 
             text: `🏓 *Pong!*\n⏱️ Latency: ${ms}ms\n📡 Status: Excellent`
         }, { quoted: m });
@@ -85,7 +83,7 @@ module.exports = {
 };
 
 // ========== UPTIME COMMAND ==========
-module.exports = {
+const uptimeCmd = {
     name: 'uptime',
     triggers: ['uptime'],
     async execute(sock, m, args, config) {
@@ -96,3 +94,6 @@ module.exports = {
         }, { quoted: m });
     }
 };
+
+// ========== EXPORT ALL COMMANDS AS ARRAY (تاکہ سب لوڈ ہوں) ==========
+module.exports = [menuCmd, aliveCmd, pingCmd, uptimeCmd];
