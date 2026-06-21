@@ -5,11 +5,10 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 
-// ========== EXPRESS SERVER (Heroku ke liye zaroori) ==========
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.get('/', (req, res) => res.send('✅ NEXXTY-XMD Bot is running!'));
+app.get('/', (req, res) => res.send('NEXXTY-XMD Bot is running!'));
 app.get('/sessionid', (req, res) => {
     const credsPath = path.join('./session', 'creds.json');
     if (fs.existsSync(credsPath)) {
@@ -32,53 +31,41 @@ app.get('/sessionid', (req, res) => {
 
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
 
-// ========== CONFIG (Environment Variables) ==========
 const SESSION_ID = process.env.SESSION_ID || null;
 const BOT_NAME = process.env.BOT_NAME || 'NEXXTY-XMD';
 const OWNER_NUMBER = process.env.OWNER_NUMBER || '923001234567';
-const PREFIX = process.env.PREFIX || '.'; // Default prefix "."
+const PREFIX = process.env.PREFIX || '.';
 
 console.log(`🤖 Bot: ${BOT_NAME}`);
 console.log(`📌 Prefix: "${PREFIX}"`);
 console.log(`🔑 Session: ${SESSION_ID ? '✅ Provided' : '❌ Missing (QR Mode)'}`);
 
-// ========== SESSION HANDLER (NEXTY-MD~ Format) ==========
 const sessionDir = './session';
 if (SESSION_ID && SESSION_ID.startsWith('NEXTY-MD~')) {
     try {
         const base64Data = SESSION_ID.replace('NEXTY-MD~', '');
         const jsonString = Buffer.from(base64Data, 'base64').toString('utf-8');
         const sessionData = JSON.parse(jsonString);
-        
         if (!fs.existsSync(sessionDir)) fs.mkdirSync(sessionDir, { recursive: true });
-        
         if (sessionData.noiseKey) {
             fs.writeFileSync(path.join(sessionDir, 'creds.json'), JSON.stringify(sessionData, null, 2));
             console.log('✅ creds.json successfully restored!');
-        } else {
-            for (const [key, value] of Object.entries(sessionData)) {
-                fs.writeFileSync(path.join(sessionDir, key), typeof value === 'string' ? value : JSON.stringify(value));
-            }
-            console.log('✅ Session files restored!');
         }
     } catch (err) {
         console.log('❌ Session parse error:', err.message);
     }
 }
 
-// ========== HELPER FUNCTIONS ==========
 function getUptime() {
     const uptime = process.uptime();
-    const hours = Math.floor(uptime / 3600);
-    const minutes = Math.floor((uptime % 3600) / 60);
-    const seconds = Math.floor(uptime % 60);
-    return `${hours}h ${minutes}m ${seconds}s`;
+    const h = Math.floor(uptime / 3600);
+    const m = Math.floor((uptime % 3600) / 60);
+    const s = Math.floor(uptime % 60);
+    return `${h}h ${m}m ${s}s`;
 }
 
-// ========== 📌 ALL COMMANDS (HARDCODED - No plugins folder needed) ==========
 const commands = {};
 
-// 1. MENU COMMAND
 commands.menu = {
     name: 'menu',
     triggers: ['menu', 'allmenu', 'help'],
@@ -86,52 +73,40 @@ commands.menu = {
         const from = m.key.remoteJid;
         const prefix = config.prefix;
         const botName = config.botName;
-
-        const menuText = `
+        const text = `
 ╔══════════════════════╗
 ║   ${botName} 🤖
 ║   ════════════════
-║
 ║   📌 *Commands:*
 ║   ─────────────
-║   ${prefix}menu  → Show Menu
-║   ${prefix}alive → Bot Status
-║   ${prefix}ping  → Check Latency
-║   ${prefix}uptime→ Bot Runtime
-║
+║   ${prefix}menu  → Menu
+║   ${prefix}alive → Status
+║   ${prefix}ping  → Latency
+║   ${prefix}uptime→ Runtime
 ║   👤 Owner: ${config.owner}
 ║   ════════════════
 ║   Made with ❤️
 ╚══════════════════════╝`;
-
         try {
-            // 📸 Aapki di hui image
-            const imageUrl = 'https://files.catbox.moe/bz29bv.jpg';
-            const response = await axios.get(imageUrl, { responseType: 'arraybuffer', timeout: 10000 });
-            await sock.sendMessage(from, {
-                image: Buffer.from(response.data),
-                caption: menuText
-            }, { quoted: m });
-        } catch (error) {
-            // Agar image na aaye toh sirf text bhejein (Koi error nahi dikhega)
-            console.log('⚠️ Image nahi mili, text menu bhej raha hoon.');
-            await sock.sendMessage(from, { text: menuText }, { quoted: m });
+            const img = await axios.get('https://files.catbox.moe/bz29bv.jpg', { responseType: 'arraybuffer', timeout: 8000 });
+            await sock.sendMessage(from, { image: Buffer.from(img.data), caption: text }, { quoted: m });
+        } catch {
+            await sock.sendMessage(from, { text }, { quoted: m });
         }
     }
 };
 
-// 2. ALIVE COMMAND
 commands.alive = {
     name: 'alive',
     triggers: ['alive', 'Alive'],
     async execute(sock, m, args, config) {
         const from = m.key.remoteJid;
-        const text = `🤖 *${config.botName} is Alive!*\n\n✅ Status: Online\n👤 Owner: ${config.owner}\n📅 Date: ${new Date().toLocaleString()}`;
-        await sock.sendMessage(from, { text }, { quoted: m });
+        await sock.sendMessage(from, { 
+            text: `🤖 *${config.botName} is Alive!*\n\n✅ Status: Online\n👤 Owner: ${config.owner}\n📅 ${new Date().toLocaleString()}`
+        }, { quoted: m });
     }
 };
 
-// 3. PING COMMAND
 commands.ping = {
     name: 'ping',
     triggers: ['ping', 'Ping'],
@@ -140,101 +115,73 @@ commands.ping = {
         const start = Date.now();
         await sock.sendMessage(from, { text: '🏓 Pinging...' }, { quoted: m });
         const end = Date.now();
-        const ms = end - start;
-        await sock.sendMessage(from, {
-            text: `🏓 *Pong!*\n⏱️ Latency: ${ms}ms\n📡 Status: Excellent`
+        await sock.sendMessage(from, { 
+            text: `🏓 *Pong!*\n⏱️ Latency: ${end - start}ms\n📡 Excellent`
         }, { quoted: m });
     }
 };
 
-// 4. UPTIME COMMAND
 commands.uptime = {
     name: 'uptime',
     triggers: ['uptime'],
     async execute(sock, m, args, config) {
         const from = m.key.remoteJid;
-        const uptime = getUptime();
-        await sock.sendMessage(from, {
-            text: `⏳ *Bot Uptime*\n🕒 ${uptime}\n🤖 ${config.botName}`
+        await sock.sendMessage(from, { 
+            text: `⏳ *Uptime*\n🕒 ${getUptime()}\n🤖 ${config.botName}`
         }, { quoted: m });
     }
 };
 
-console.log('✅ All 4 commands (menu, alive, ping, uptime) loaded successfully!');
+console.log('✅ All 4 commands loaded!');
 
-// ========== 🚀 START BOT ==========
 async function startBot() {
     const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
-    
     const sock = makeWASocket({
         auth: state,
-        logger: Pino({ level: 'error' }), // Error dikhne ke liye
+        logger: Pino({ level: 'error' }),
         browser: ['NEXXTY-XMD', 'Chrome', '1.0.0'],
-        printQRInTerminal: !SESSION_ID, // Agar session nahi toh QR dikhao
+        printQRInTerminal: !SESSION_ID,
     });
 
-    // Credentials save karo
     sock.ev.on('creds.update', saveCreds);
-
-    // Connection updates
-    sock.ev.on('connection.update', async (update) => {
-        const { connection, lastDisconnect, qr } = update;
-
+    sock.ev.on('connection.update', async (u) => {
+        const { connection, lastDisconnect, qr } = u;
         if (qr && !SESSION_ID) {
-            console.log('📱 WhatsApp mein ja kar QR code scan karein:');
+            console.log('📱 WhatsApp mein QR scan karein:');
             require('qrcode-terminal').generate(qr, { small: true });
-            console.log('🔗 Scan karne ke baad /sessionid route se session copy karein.');
         }
-
         if (connection === 'open') {
-            console.log(`✅ ${BOT_NAME} ab WhatsApp se ONLINE hai! Ab .ping command chala kar dekhein.`);
+            console.log(`✅ ${BOT_NAME} ab WhatsApp se ONLINE hai!`);
         }
-
         if (connection === 'close') {
-            const statusCode = lastDisconnect?.error?.output?.statusCode;
-            console.log(`❌ Connection close. Code: ${statusCode}`);
-            if (statusCode !== DisconnectReason.loggedOut) {
+            const code = lastDisconnect?.error?.output?.statusCode;
+            console.log(`❌ Connection close. Code: ${code}`);
+            if (code !== DisconnectReason.loggedOut) {
                 console.log('🔄 Reconnecting...');
                 startBot();
-            } else {
-                console.log('❌ Logged out. Session delete karke new QR scan karein.');
             }
         }
     });
 
-    // Messages handler
     sock.ev.on('messages.upsert', async (msg) => {
         try {
             const m = msg.messages[0];
             if (!m.message || m.key.fromMe) return;
-
             const from = m.key.remoteJid;
-            const text = m.message.conversation || 
-                         m.message.extendedTextMessage?.text || 
-                         m.message.imageMessage?.caption || '';
-
+            const text = m.message.conversation || m.message.extendedTextMessage?.text || '';
             if (!text.startsWith(PREFIX)) return;
-
             const args = text.slice(PREFIX.length).trim().split(/\s+/);
             const cmdName = args.shift().toLowerCase();
-
             const cmd = commands[cmdName];
             if (cmd) {
-                console.log(`🔍 Command received: ${cmdName} from ${from}`);
-                await cmd.execute(sock, m, args, { 
-                    botName: BOT_NAME, 
-                    owner: OWNER_NUMBER, 
-                    prefix: PREFIX 
-                });
-                console.log(`✅ ${cmdName} executed successfully!`);
+                console.log(`🔍 Command: ${cmdName}`);
+                await cmd.execute(sock, m, args, { botName: BOT_NAME, owner: OWNER_NUMBER, prefix: PREFIX });
+                console.log(`✅ Executed: ${cmdName}`);
             }
         } catch (err) {
-            console.log('❌ Error in messages handler:', err.message);
+            console.log('❌ Messages error:', err.message);
         }
     });
 }
 
-// ========== BOOT KARO ==========
-startBot().catch(err => {
-    console.log('❌ Fatal Error:', err);
-});
+startBot().catch(err => console.log('Fatal:', err));
