@@ -1,10 +1,11 @@
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, Browsers } = require('@whiskeysockets/baileys');
 const Pino = require('pino');
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 
+// ========== EXPRESS SERVER ==========
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -31,6 +32,7 @@ app.get('/sessionid', (req, res) => {
 
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
 
+// ========== CONFIG ==========
 const SESSION_ID = process.env.SESSION_ID || null;
 const BOT_NAME = process.env.BOT_NAME || 'NEXXTY-XMD';
 const OWNER_NUMBER = process.env.OWNER_NUMBER || '923001234567';
@@ -40,6 +42,7 @@ console.log(`🤖 Bot: ${BOT_NAME}`);
 console.log(`📌 Prefix: "${PREFIX}"`);
 console.log(`🔑 Session: ${SESSION_ID ? '✅ Provided' : '❌ Missing (QR Mode)'}`);
 
+// ========== SESSION HANDLER ==========
 const sessionDir = './session';
 if (SESSION_ID && SESSION_ID.startsWith('NEXTY-MD~')) {
     try {
@@ -50,12 +53,18 @@ if (SESSION_ID && SESSION_ID.startsWith('NEXTY-MD~')) {
         if (sessionData.noiseKey) {
             fs.writeFileSync(path.join(sessionDir, 'creds.json'), JSON.stringify(sessionData, null, 2));
             console.log('✅ creds.json successfully restored!');
+        } else {
+            for (const [key, value] of Object.entries(sessionData)) {
+                fs.writeFileSync(path.join(sessionDir, key), typeof value === 'string' ? value : JSON.stringify(value));
+            }
+            console.log('✅ Session files restored!');
         }
     } catch (err) {
         console.log('❌ Session parse error:', err.message);
     }
 }
 
+// ========== HELPER FUNCTIONS ==========
 function getUptime() {
     const uptime = process.uptime();
     const h = Math.floor(uptime / 3600);
@@ -64,6 +73,7 @@ function getUptime() {
     return `${h}h ${m}m ${s}s`;
 }
 
+// ========== ALL COMMANDS (HARDCODED) ==========
 const commands = {};
 
 commands.menu = {
@@ -132,14 +142,17 @@ commands.uptime = {
     }
 };
 
-console.log('✅ All 4 commands loaded!');
+console.log('✅ All 4 commands (menu, alive, ping, uptime) loaded successfully!');
 
+// ========== 🚀 START BOT ==========
 async function startBot() {
     const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
+    
+    // 🔥 Yeha change kiya: Ab Browsers.windows("Chrome") use kar raha hai
     const sock = makeWASocket({
         auth: state,
         logger: Pino({ level: 'error' }),
-        browser: ['NEXXTY-XMD', 'Chrome', '1.0.0'],
+        browser: Browsers.windows("Chrome"), // ← isko pair.js ke saath match karo
         printQRInTerminal: !SESSION_ID,
     });
 
