@@ -1,0 +1,32 @@
+{
+  "name": "NEXXTY-XMD",
+  "description": "A Powerful WhatsApp Bot",
+  "repository": "https://github.com/isagii7/NEXXTY-XMD",
+  "logo": "https://files.catbox.moe/bz29bv.jpg",
+  "keywords": ["whatsapp", "bot", "md", "baileys"],
+  "env": {
+    "SESSION_ID": {
+      "description": "Your session ID (Format: NEXTY-MD~base64data)",
+      "required": true
+    },
+    "OWNER_NUMBER": {
+      "description": "Your WhatsApp number with country code",
+      "required": true
+    },
+    "BOT_NAME": {
+      "description": "Name of your bot",
+      "value": "NEXXTY-XMD",
+      "required": false
+    },
+    "PREFIX": {
+      "description": "Command prefix",
+      "value": ".",
+      "required": false
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ]
+}
