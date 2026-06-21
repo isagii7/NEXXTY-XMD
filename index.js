@@ -14,58 +14,65 @@ app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
 const SESSION_ID = process.env.SESSION_ID || null;
 const BOT_NAME = process.env.BOT_NAME || 'NEXXTY-XMD';
 const OWNER_NUMBER = process.env.OWNER_NUMBER || '923001234567';
-const PREFIX = process.env.PREFIX || '.';
+const PREFIX = process.env.PREFIX || '.'; // ڈیفالٹ prefix . ہے
 
 console.log(`🤖 Bot: ${BOT_NAME}`);
+console.log(`📌 Prefix: "${PREFIX}"`);
 console.log(`🔑 Session: ${SESSION_ID ? '✅ Provided' : '❌ Missing'}`);
 
-// ========== SESSION HANDLER (NEXTY-MD~ FORMAT - FIXED) ==========
+// ========== SESSION HANDLER (NEXTY-MD~ FORMAT) ==========
 const sessionDir = './session';
 if (SESSION_ID && SESSION_ID.startsWith('NEXTY-MD~')) {
     try {
-        // 1. Base64 کو ڈی کوڈ کریں
         const base64Data = SESSION_ID.replace('NEXTY-MD~', '');
         const jsonString = Buffer.from(base64Data, 'base64').toString('utf-8');
         const sessionData = JSON.parse(jsonString);
 
-        // 2. session فولڈر بنائیں
         if (!fs.existsSync(sessionDir)) fs.mkdirSync(sessionDir, { recursive: true });
 
-        // 3. چیک کریں کہ یہ براہِ راست creds.json ہے یا نہیں
-        // اگر اس میں noiseKey ہے تو یہ creds.json کا Raw ڈیٹا ہے
         if (sessionData.noiseKey) {
-            // براہِ راست creds.json بنا دیں
             fs.writeFileSync(path.join(sessionDir, 'creds.json'), JSON.stringify(sessionData, null, 2));
-            console.log('✅ creds.json restored successfully (Direct format)');
+            console.log('✅ creds.json restored successfully');
         } else {
-            // ورنہ پہلے والا طریقہ (اگر کبھی ناموں والا فارمیٹ آئے)
             for (const [key, value] of Object.entries(sessionData)) {
                 const filePath = path.join(sessionDir, key);
                 fs.writeFileSync(filePath, typeof value === 'string' ? value : JSON.stringify(value));
             }
-            console.log('✅ Session files restored successfully (Map format)');
+            console.log('✅ Session files restored');
         }
     } catch (err) {
         console.log('❌ Failed to parse session:', err.message);
     }
-} else {
-    console.log('⚠️ No valid SESSION_ID found. QR code will be shown.');
 }
 
-// ========== LOAD COMMANDS ==========
+// ========== LOAD COMMANDS (ARRAY SUPPORT) ==========
 const commands = {};
 try {
-    const cmdFiles = fs.readdirSync('./plugins').filter(f => f.endsWith('.js'));
-    for (const file of cmdFiles) {
-        const cmd = require(`./plugins/${file}`);
-        if (cmd.name && cmd.execute) {
-            commands[cmd.name] = cmd;
-            if (cmd.triggers) cmd.triggers.forEach(t => commands[t] = cmd);
-            console.log(`✅ Loaded: ${cmd.name}`);
+    if (fs.existsSync('./plugins')) {
+        const cmdFiles = fs.readdirSync('./plugins').filter(f => f.endsWith('.js'));
+        for (const file of cmdFiles) {
+            const exported = require(`./plugins/${file}`);
+            
+            if (Array.isArray(exported)) {
+                for (const cmd of exported) {
+                    if (cmd.name && cmd.execute) {
+                        commands[cmd.name] = cmd;
+                        if (cmd.triggers) cmd.triggers.forEach(t => commands[t] = cmd);
+                        console.log(`✅ Loaded: ${cmd.name}`);
+                    }
+                }
+            } else if (exported.name && exported.execute) {
+                commands[exported.name] = exported;
+                if (exported.triggers) exported.triggers.forEach(t => commands[t] = exported);
+                console.log(`✅ Loaded: ${exported.name}`);
+            }
         }
+    } else {
+        console.log('⚠️ plugins folder not found, creating...');
+        fs.mkdirSync('./plugins');
     }
 } catch (err) {
-    console.log('⚠️ No plugins folder found or error loading commands.');
+    console.log('⚠️ Error loading commands:', err.message);
 }
 
 // ========== START BOT ==========
@@ -82,7 +89,7 @@ async function startBot() {
     sock.ev.on('connection.update', async (u) => {
         const { connection, lastDisconnect, qr } = u;
         if (qr && !SESSION_ID) {
-            console.log('📱 Scan this QR code with WhatsApp:');
+            console.log('📱 Scan this QR code:');
             require('qrcode-terminal').generate(qr, { small: true });
         }
         if (connection === 'open') {
@@ -109,6 +116,20 @@ async function startBot() {
         const args = text.slice(PREFIX.length).trim().split(/\s+/);
         const cmdName = args.shift().toLowerCase();
         const cmd = commands[cmdName];
+        if (cmd) {
+            try {
+                console.log(`🔍 Command: ${cmdName} from ${from}`);
+                await cmd.execute(sock, m, args, { botName: BOT_NAME, owner: OWNER_NUMBER, prefix: PREFIX });
+                console.log(`✅ Executed: ${cmdName}`);
+            } catch (err) {
+                console.log(`❌ Error executing ${cmdName}:`, err.message);
+                await sock.sendMessage(from, { text: `❌ Error: ${err.message}` }, { quoted: m });
+            }
+        }
+    });
+}
+
+startBot().catch(err => console.log('Fatal Error:', err));        const cmd = commands[cmdName];
         if (cmd) {
             try {
                 console.log(`🔍 Command: ${cmdName} from ${from}`);
