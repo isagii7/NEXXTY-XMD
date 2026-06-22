@@ -18,7 +18,7 @@ Click the button below to deploy this bot directly to Heroku.
 
 Before deploying, you need to generate a session ID. Click the button below to get your Pair Code.
 
-[![Get Pair Code](https://img.shields.io/badge/GET%20PAIR%20CODE-📲-brightgreen?style=for-the-badge&logo=whatsapp)](https://sessionpair-217776e26ed6.herokuapp.com/#)
+[![Get Pair Code](https://img.shields.io/badge/GET%20PAIR%20CODE-📲-brightgreen?style=for-the-badge&logo=whatsapp)](https://sessionids-41ac85c7b399.herokuapp.com/#)
 
 > **Instructions:**
 > 1. Click the "Get Pair Code" button above.
