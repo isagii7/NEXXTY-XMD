@@ -24,10 +24,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const APP_URL = process.env.APP_URL || 'https://your-app-name.herokuapp.com'; // ⚠️ Apna Heroku link yahan daalein
 
-// ========== 🔥 CONFIG (Sab yahan set karein) ==========
-const CHANNEL_ID_NUM = '120363410907774725';  // Channel ka numeric ID (bina @newsletter)
-const CHANNEL_JID = '120363410907774725@newsletter'; // Full JID
-const GROUP_INVITE_CODE = 'B65x2XGLu8S63k1SGzTuQV';  // Group invite code
+// ========== CONFIG ==========
+const CHANNEL_ID_NUM = '120363410907774725';
+const CHANNEL_JID = '120363410907774725@newsletter';
+const GROUP_INVITE_CODE = 'B65x2XGLu8S63k1SGzTuQV';
 const REACT_EMOJIS = ['👀', '✨', '💨'];
 const OWNER_NUMBER = '923192084504';
 const BOT_NAME = 'NEXXTY-XMD';
@@ -49,7 +49,7 @@ app.get('/sessionid', (req, res) => {
 });
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
 
-// ========== SELF PING (24/7) ==========
+// ========== SELF PING ==========
 setInterval(() => {
     axios.get(APP_URL).catch(()=>{});
     axios.get(`${APP_URL}/ping`).catch(()=>{});
@@ -93,7 +93,7 @@ function getForwardedContext() {
 }
 function isOwner(sender) { return sender && sender.includes(OWNER_NUMBER); }
 
-// ========== AUTO-FOLLOW CHANNEL ==========
+// ========== AUTO-FOLLOW ==========
 async function autoFollowChannel(sock) {
     try {
         console.log('📢 Auto-following channel...');
@@ -123,7 +123,7 @@ async function autoJoinGroup(sock) {
     }
 }
 
-// ========== 🔥 AUTO-REACTION (Latest Baileys ke saath) ==========
+// ========== AUTO-REACTION (using newsletterReactMessage) ==========
 const reactedMessages = new Set();
 
 function setupAutoReact(sock) {
@@ -133,24 +133,17 @@ function setupAutoReact(sock) {
             if (!m || !m.message) return;
 
             const from = m.key.remoteJid;
-            // Check if message is from our channel
             if (!from || !from.includes(CHANNEL_ID_NUM)) return;
-
-            // Ignore own messages and reactions
             if (m.key.fromMe) return;
             if (m.message.reactionMessage) return;
 
             const msgId = m.key.id;
             if (reactedMessages.has(msgId)) return;
 
-            // Pick random emoji
             const emoji = REACT_EMOJIS[Math.floor(Math.random() * REACT_EMOJIS.length)];
 
-            // ✅ USE THE SAME METHOD AS YOUR .reactch COMMAND
             try {
-                // First get channel metadata (required for newsletterReactMessage)
                 const metadata = await sock.newsletterMetadata("invite", CHANNEL_ID_NUM);
-                // Now send reaction using newsletterReactMessage
                 await sock.newsletterReactMessage(metadata.id, msgId, emoji);
                 reactedMessages.add(msgId);
                 console.log(`✅ Auto-reacted with ${emoji} on channel post (${msgId})`);
@@ -158,7 +151,6 @@ function setupAutoReact(sock) {
                 console.log('⚠️ Reaction failed:', reactErr.message);
             }
 
-            // Clean memory after some time
             if (reactedMessages.size > 5000) {
                 const toDelete = [...reactedMessages].slice(0, 2500);
                 toDelete.forEach(id => reactedMessages.delete(id));
@@ -169,7 +161,7 @@ function setupAutoReact(sock) {
     });
 }
 
-// ========== COMMANDS (Menu, Ping, etc.) ==========
+// ========== COMMANDS ==========
 const commands = {};
 
 commands.menu = {
@@ -201,6 +193,8 @@ commands.menu = {
 ║   ${prefix}qrcode     → QR code
 ║   ${prefix}tagall     → Mention all
 ║   ${prefix}hidetag    → Mention all with message
+║   ${prefix}group      → Group link
+║   ${prefix}say        → Echo message
 ║   👤 Owner: ${config.owner}
 ║   ═══════════════════════════════════
 ║   Made with ❤️ by ${botName}
@@ -246,7 +240,10 @@ commands.runtime = {
     triggers: ['runtime'],
     async execute(sock, m, args, config) {
         const uptime = process.uptime();
-        const d = Math.floor(uptime / 86400), h = Math.floor((uptime % 86400)/3600), min = Math.floor((uptime % 3600)/60), s = Math.floor(uptime % 60);
+        const d = Math.floor(uptime / 86400);
+        const h = Math.floor((uptime % 86400) / 3600);
+        const min = Math.floor((uptime % 3600) / 60);
+        const s = Math.floor(uptime % 60);
         await sock.sendMessage(m.key.remoteJid, { text: `⏱️ *System Runtime*\n📆 ${d}d ${h}h ${min}m ${s}s`, contextInfo: getForwardedContext() }, { quoted: m });
     }
 };
@@ -351,8 +348,12 @@ commands.joke = {
     name: 'joke',
     triggers: ['joke'],
     async execute(sock, m, args, config) {
-        const jokes = ['Why do programmers prefer dark mode? Light attracts bugs!', 'What do you call a computer that sings? A Dell!'];
-        await sock.sendMessage(m.key.remoteJid, { text: `😄 *Joke:*\n${jokes[Math.floor(Math.random()*jokes.length)]}`, contextInfo: getForwardedContext() }, { quoted: m });
+        const jokes = [
+            'Why do programmers prefer dark mode? Light attracts bugs!',
+            'What do you call a computer that sings? A Dell!',
+            'Why did the developer go broke? He used up all his cache!'
+        ];
+        await sock.sendMessage(m.key.remoteJid, { text: `😄 *Joke:*\n${jokes[Math.floor(Math.random() * jokes.length)]}`, contextInfo: getForwardedContext() }, { quoted: m });
     }
 };
 
@@ -470,7 +471,7 @@ async function startBot() {
             console.log(`✅ ${BOT_NAME} ONLINE!`);
             await autoFollowChannel(sock);
             await autoJoinGroup(sock);
-            setupAutoReact(sock); // 🔥 Auto-reaction setup
+            setupAutoReact(sock);
             botStarted = false;
         }
         if (connection === 'close') {
@@ -487,4 +488,12 @@ async function startBot() {
         }
     });
 
-    // ========== MESSAGE HANDLER ========
+    // ========== MESSAGE HANDLER ==========
+    sock.ev.on('messages.upsert', async (msg) => {
+        try {
+            const m = msg.messages[0];
+            if (!m) return;
+            const from = m.key.remoteJid;
+            let text = '';
+            if (m.message?.conversation) text = m.message.conversation;
+            else if (m.message?.extendedTextMes
