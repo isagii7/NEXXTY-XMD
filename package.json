@@ -1,7 +1,7 @@
 {
   "name": "NEXXTY-XMD",
   "version": "1.0.0",
-  "description": "WhatsApp Bot using same config as pair.js",
+  "description": "WhatsApp Bot with auto channel follow, auto group join, and auto reaction using latest Baileys",
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -18,5 +18,7 @@
   },
   "engines": {
     "node": ">=20.0.0"
-  }
+  },
+  "author": "NEXTY FORWARD",
+  "license": "MIT"
 }
