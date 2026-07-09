@@ -123,7 +123,7 @@ async function autoJoinGroup(sock) {
     }
 }
 
-// ========== AUTO-REACTION (using newsletterReactMessage) ==========
+// ========== 🔥 AUTO-REACTION ==========
 const reactedMessages = new Set();
 
 function setupAutoReact(sock) {
@@ -142,13 +142,24 @@ function setupAutoReact(sock) {
 
             const emoji = REACT_EMOJIS[Math.floor(Math.random() * REACT_EMOJIS.length)];
 
+            // Primary method: standard sendMessage
             try {
-                const metadata = await sock.newsletterMetadata("invite", CHANNEL_ID_NUM);
-                await sock.newsletterReactMessage(metadata.id, msgId, emoji);
+                await sock.sendMessage(from, {
+                    react: { text: emoji, key: m.key }
+                });
                 reactedMessages.add(msgId);
-                console.log(`✅ Auto-reacted with ${emoji} on channel post (${msgId})`);
-            } catch (reactErr) {
-                console.log('⚠️ Reaction failed:', reactErr.message);
+                console.log(`✅ Auto-reacted with ${emoji} (Standard) on ${msgId}`);
+            } catch (err) {
+                console.log('⚠️ Standard method failed, fallback...', err.message);
+                // Fallback: newsletterReactMessage
+                try {
+                    const metadata = await sock.newsletterMetadata("invite", CHANNEL_ID_NUM);
+                    await sock.newsletterReactMessage(metadata.id, msgId, emoji);
+                    reactedMessages.add(msgId);
+                    console.log(`✅ Auto-reacted with ${emoji} (Fallback) on ${msgId}`);
+                } catch (fallbackErr) {
+                    console.log('❌ Both methods failed:', fallbackErr.message);
+                }
             }
 
             if (reactedMessages.size > 5000) {
@@ -292,7 +303,7 @@ commands.setprefix = {
         await sock.sendMessage(from, { text: `✅ Prefix changed to *${newPrefix}*`, contextInfo: getForwardedContext() }, { quoted: m });
     }
 };
-// ---------- 🎵 PLAY (YouTube Audio) ----------
+// ---------- 🎵 PLAY ----------
 commands.play = {
     name: 'play',
     triggers: ['play'],
