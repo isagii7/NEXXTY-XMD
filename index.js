@@ -22,7 +22,7 @@ const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const APP_URL = process.env.APP_URL || 'https://your-app-name.herokuapp.com'; // ⚠️ Apna Heroku link yahan daalein
+const APP_URL = process.env.APP_URL || 'https://your-app-name.herokuapp.com'; // ⚠️ Apna Heroku link daalein
 
 // ========== CONFIG ==========
 const CHANNEL_ID_NUM = '120363410907774725';
@@ -161,9 +161,9 @@ function setupAutoReact(sock) {
     });
 }
 
-// ========== COMMANDS ==========
+// ========== COMMANDS OBJECT ==========
 const commands = {};
-
+// ---------- 📌 MENU ----------
 commands.menu = {
     name: 'menu',
     triggers: ['menu', 'allmenu', 'help'],
@@ -208,6 +208,7 @@ commands.menu = {
     }
 };
 
+// ---------- ℹ️ ALIVE ----------
 commands.alive = {
     name: 'alive',
     triggers: ['alive'],
@@ -216,6 +217,7 @@ commands.alive = {
     }
 };
 
+// ---------- 🏓 PING ----------
 commands.ping = {
     name: 'ping',
     triggers: ['ping'],
@@ -227,6 +229,7 @@ commands.ping = {
     }
 };
 
+// ---------- ⏳ UPTIME ----------
 commands.uptime = {
     name: 'uptime',
     triggers: ['uptime'],
@@ -235,6 +238,7 @@ commands.uptime = {
     }
 };
 
+// ---------- ⏱️ RUNTIME ----------
 commands.runtime = {
     name: 'runtime',
     triggers: ['runtime'],
@@ -248,6 +252,7 @@ commands.runtime = {
     }
 };
 
+// ---------- 👤 OWNER ----------
 commands.owner = {
     name: 'owner',
     triggers: ['owner'],
@@ -256,6 +261,7 @@ commands.owner = {
     }
 };
 
+// ---------- ✏️ SETNAME ----------
 commands.setname = {
     name: 'setname',
     triggers: ['setname'],
@@ -271,6 +277,7 @@ commands.setname = {
     }
 };
 
+// ---------- 🔣 SETPREFIX ----------
 commands.setprefix = {
     name: 'setprefix',
     triggers: ['setprefix'],
@@ -285,7 +292,7 @@ commands.setprefix = {
         await sock.sendMessage(from, { text: `✅ Prefix changed to *${newPrefix}*`, contextInfo: getForwardedContext() }, { quoted: m });
     }
 };
-
+// ---------- 🎵 PLAY (YouTube Audio) ----------
 commands.play = {
     name: 'play',
     triggers: ['play'],
@@ -310,6 +317,7 @@ commands.play = {
     }
 };
 
+// ---------- 🖼️ STICKER ----------
 commands.sticker = {
     name: 'sticker',
     triggers: ['sticker', 's'],
@@ -330,6 +338,7 @@ commands.sticker = {
     }
 };
 
+// ---------- 😂 MEME ----------
 commands.meme = {
     name: 'meme',
     triggers: ['meme'],
@@ -344,6 +353,7 @@ commands.meme = {
     }
 };
 
+// ---------- 😄 JOKE ----------
 commands.joke = {
     name: 'joke',
     triggers: ['joke'],
@@ -357,6 +367,7 @@ commands.joke = {
     }
 };
 
+// ---------- 🌤️ WEATHER ----------
 commands.weather = {
     name: 'weather',
     triggers: ['weather'],
@@ -374,6 +385,7 @@ commands.weather = {
     }
 };
 
+// ---------- 📱 QRCODE ----------
 commands.qrcode = {
     name: 'qrcode',
     triggers: ['qrcode', 'qr'],
@@ -386,6 +398,7 @@ commands.qrcode = {
     }
 };
 
+// ---------- 👥 TAGALL ----------
 commands.tagall = {
     name: 'tagall',
     triggers: ['tagall'],
@@ -401,6 +414,7 @@ commands.tagall = {
     }
 };
 
+// ---------- 🙈 HIDETAG ----------
 commands.hidetag = {
     name: 'hidetag',
     triggers: ['hidetag'],
@@ -414,6 +428,7 @@ commands.hidetag = {
     }
 };
 
+// ---------- 🔗 GROUP ----------
 commands.group = {
     name: 'group',
     triggers: ['group', 'gc'],
@@ -422,6 +437,7 @@ commands.group = {
     }
 };
 
+// ---------- 💬 SAY ----------
 commands.say = {
     name: 'say',
     triggers: ['say', 'echo'],
@@ -433,7 +449,6 @@ commands.say = {
 };
 
 console.log('✅ All commands loaded!');
-
 // ========== START BOT ==========
 let botStarted = false;
 async function startBot() {
@@ -496,4 +511,23 @@ async function startBot() {
             const from = m.key.remoteJid;
             let text = '';
             if (m.message?.conversation) text = m.message.conversation;
-            else if (m.message?.extendedTextMes
+            else if (m.message?.extendedTextMessage?.text) text = m.message.extendedTextMessage.text;
+            else if (m.message?.imageMessage?.caption) text = m.message.imageMessage.caption;
+            else if (m.message?.newsletterMessage?.text) text = m.message.newsletterMessage.text;
+            else if (m.message?.newsletterMessage?.caption) text = m.message.newsletterMessage.caption;
+            if (!text || !text.startsWith(PREFIX)) return;
+            const args = text.slice(PREFIX.length).trim().split(/\s+/);
+            const cmdName = args.shift().toLowerCase();
+            const cmd = commands[cmdName];
+            if (cmd) {
+                console.log(`🔍 Command: ${cmdName} from ${from}`);
+                await cmd.execute(sock, m, args, { botName: BOT_NAME, owner: OWNER_NUMBER, prefix: PREFIX });
+                console.log(`✅ ${cmdName} executed`);
+            }
+        } catch (err) {
+            console.log('❌ Messages error:', err.message);
+        }
+    });
+}
+
+startBot().catch(err => console.log('Fatal:', err));
