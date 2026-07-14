@@ -1,32 +1,83 @@
 {
   "name": "NEXXTY-XMD",
-  "description": "A Powerful WhatsApp Bot",
-  "repository": "https://github.com/isagii7/NEXXTY-XMD",
-  "logo": "https://files.catbox.moe/bz29bv.jpg",
-  "keywords": ["whatsapp", "bot", "md", "baileys"],
+  "description": "NEXXTY-XMD – Advanced WhatsApp bot by ALIxNEXTY",
+  "logo": "",
+  "repository": "https://github.com/yourusername/NEXXTY-XMD",
+  "keywords": ["whatsapp", "bot", "nexxity", "baileys"],
+  "success_url": "/",
+  "buildpacks": [
+    { "url": "heroku/nodejs" }
+  ],
+  "formation": {
+    "worker": {
+      "quantity": 1,
+      "size": "basic"
+    },
+    "web": {
+      "quantity": 0,
+      "size": "basic"
+    }
+  },
   "env": {
-    "SESSION_ID": {
-      "description": "Your session ID (Format: NEXTY-MD~base64data)",
+    "HEROKU_APP_NAME": {
+      "description": "The name of this Heroku app.",
+      "value": "",
       "required": true
     },
-    "OWNER_NUMBER": {
-      "description": "Your WhatsApp number with country code",
+    "SESSION_ID": {
+      "description": "Your WhatsApp session string (format: NEXXTY-MD~base64).",
+      "value": "",
+      "required": true
+    },
+    "PREFIX": {
+      "description": "Command prefix for the bot",
+      "value": ".",
       "required": true
     },
     "BOT_NAME": {
-      "description": "Name of your bot",
+      "description": "Display name for the bot",
       "value": "NEXXTY-XMD",
       "required": false
     },
-    "PREFIX": {
-      "description": "Command prefix",
-      "value": ".",
+    "OWNER_NAME": {
+      "description": "Owner name (shown in bot info/menu)",
+      "value": "ALIxNEXTY",
+      "required": false
+    },
+    "OWNER_NUMBER": {
+      "description": "Your WhatsApp number with country code (e.g. 923192084504)",
+      "value": "923192084504",
+      "required": true
+    },
+    "HEROKU_API_KEY": {
+      "description": "Your Heroku API key (for .update commands)",
+      "value": "",
+      "required": true
+    },
+    "STICKER_NAME": {
+      "description": "Pack name for stickers",
+      "value": "NEXXTY-XMD",
+      "required": false
+    },
+    "AUTO_READ_STATUS": {
+      "description": "Auto-view WhatsApp status (true/false)",
+      "value": "false",
+      "required": false
+    },
+    "AUTO_REACT": {
+      "description": "Auto-react to messages (true/false)",
+      "value": "false",
+      "required": false
+    },
+    "PUBLIC_MODE": {
+      "description": "Allow anyone to use commands (true/false)",
+      "value": "true",
+      "required": false
+    },
+    "TIMEZONE": {
+      "description": "Timezone for scheduled features",
+      "value": "Asia/Karachi",
       "required": false
     }
-  },
-  "buildpacks": [
-    {
-      "url": "heroku/nodejs"
-    }
-  ]
+  }
 }
