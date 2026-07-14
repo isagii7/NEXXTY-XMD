@@ -79,3 +79,21 @@ const found = getQuotedViewOnce(msg);
     }
   },
 };
+    // Send the alive audio
+    const audioPath = path.join(__dirname, "../assets/owner.m4a");
+
+    if (fs.existsSync(audioPath)) {
+      await sock.sendMessage(
+        jid,
+        {
+          audio: fs.readFileSync(audioPath),
+          mimetype: "audio/mp4",
+          ptt: false,
+        },
+        {
+          quoted: msg,
+        }
+      );
+    }
+  },
+};
