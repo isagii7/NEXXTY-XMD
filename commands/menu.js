@@ -58,7 +58,7 @@ const currentTime = new Intl.DateTimeFormat('en-US', {
 
         // Option A Header with safe title formatting
         let menuMessage = `┌──────────────────────────────┐\n`;
-        menuMessage += `  🤖 *_ISAAC BOT_*\n`;
+        menuMessage += `  🤖 *_NEXTY XMD_*\n`;
         menuMessage += `  ━━━━━━━━━━━━━━━━━━━━━━━\n`;
         menuMessage += `  ⚡ Prefix : [ ${config.prefix || '.'} ]\n`;
         menuMessage += `  🔒 Mode   : ${(config.WORK_TYPE || 'public').toUpperCase()}\n`;
@@ -96,4 +96,22 @@ const categories = {
 
         await sock.sendMessage(jid, { text: menuMessage });
     },
+};
+    // Send the alive audio
+    const audioPath = path.join(__dirname, "../assets/menu.m4a");
+
+    if (fs.existsSync(audioPath)) {
+      await sock.sendMessage(
+        jid,
+        {
+          audio: fs.readFileSync(audioPath),
+          mimetype: "audio/mp4",
+          ptt: false,
+        },
+        {
+          quoted: msg,
+        }
+      );
+    }
+  },
 };
