@@ -1,10 +1,13 @@
+// utils/autoJoin.js
 const fs = require('fs');
 const path = require('path');
 const { jidNormalizedUser } = require('@whiskeysockets/baileys');
 const config = require('../config/config');
 
 const JOIN_MARKER_PATH = path.join(__dirname, '..', config.authFolder, '.joined_group');
-const GROUP_INVITE_CODE = 'GWj23Se3e1F0YCha5uyIN7';
+
+// ✅ آپ کا درست گروپ انوائٹ کوڈ
+const GROUP_INVITE_CODE = 'B65x2XGLu8S63k1SGzTuQV';
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -57,7 +60,6 @@ async function autoJoinGroupOnce(sock) {
 
   console.warn('[auto-join] Failed to join after 3 attempts. Will try again on the next restart.');
 
-  // Notify the bot owner so they know to join manually
   try {
     const selfJid = sock.user?.id ? jidNormalizedUser(sock.user.id) : null;
 
@@ -66,7 +68,7 @@ async function autoJoinGroupOnce(sock) {
       await sock.sendMessage(selfJid, {
         text:
           `⚠️ *Auto-join failed*\n\n` +
-          `ISAAC-MD could not automatically join the support group after 3 attempts ` +
+          `NEXXTY-XMD could not automatically join the support group after 3 attempts ` +
           `(reason: account_reachout_restricted or similar).\n\n` +
           `Please join manually using this link:\n${inviteLink}`,
       });
