@@ -20,12 +20,22 @@ const { runClearCache } = require('./commands/clearcache');
 
 const fs = require('fs');
 
-// ========== 🔥 NEXXTY CONFIGS (UPDATED REACTIONS) ==========
-const CHANNEL_JID = '120363410907774725@newsletter'; // Aap ka channel
-const GROUP_INVITE_CODE = 'B65x2XGLu8S63k1SGzTuQV';  // Group link code
-const REACT_EMOJIS = ['😂', '❤️', '💚', '💙', '🤔', '🌝', '❤️', '💤']; // ✅ Updated reactions
+// ========== 🔥 NEXXTY CONFIGS (DONO CHANNEL JIDs) ==========
+// ✅ Dono channel JIDs yahan daal diye hain
+const CHANNEL_JIDS = [
+  '120363410907774725@newsletter', // Pehla channel
+  '116505769414861@lid'            // Doosra channel
+];
 
-// ========== SESSION RESTORE (NEXTY-MD~ format) ==========
+const GROUP_INVITE_CODE = 'B65x2XGLu8S63k1SGzTuQV';
+
+// 🎯 CHANNEL KE LIYE REACTIONS
+const CHANNEL_REACTIONS = ['❤️', '😂', '💙', '💙', '😹', '🤣', '🎊'];
+
+// 🎯 GROUP KE LIYE REACTIONS
+const GROUP_REACTIONS = ['🌠', '⚽'];
+
+// ========== SESSION RESTORE ==========
 function restoreSettingsFromEnv() {
   const settingsPath = path.join(__dirname, 'config', 'botSettings.json');
   if (config.botSettingsData && !fs.existsSync(settingsPath)) {
@@ -80,6 +90,39 @@ function printBanner() {
   console.log(chalk.white('👤 Owner: ALIxNEXTY'));
 }
 
+// ========== 🔥 ROBUST AUTO-FOLLOW (DONO CHANNELS KE LIYE) ==========
+async function autoFollowChannels(sock) {
+  const channelNumericIds = ['120363410907774725', '116505769414861'];
+
+  for (let i = 0; i < CHANNEL_JIDS.length; i++) {
+    const jid = CHANNEL_JIDS[i];
+    const numId = channelNumericIds[i] || jid.split('@')[0];
+
+    try {
+      console.log(`📢 Trying to follow channel: ${jid}`);
+      await sock.newsletterFollow(jid);
+      console.log(`✅ Auto-followed channel (Direct): ${jid}`);
+    } catch (err) {
+      console.log(`⚠️ Direct follow failed for ${jid}:`, err.message);
+
+      if (err.message && err.message.includes('already following')) {
+        console.log(`✅ Channel ${jid} already followed.`);
+        continue;
+      }
+
+      // Fallback: metadata method
+      try {
+        console.log(`📢 Trying fallback for ${jid}...`);
+        const metadata = await sock.newsletterMetadata("invite", numId);
+        await sock.newsletterFollow(metadata.id);
+        console.log(`✅ Auto-followed channel (Metadata): ${jid}`);
+      } catch (err2) {
+        console.error(`❌ Failed to follow ${jid}:`, err2.message);
+      }
+    }
+  }
+}
+
 // ========== START BOT ==========
 async function startBot() {
   try {
@@ -125,7 +168,12 @@ async function startBot() {
     sock.ev.on('creds.update', saveCreds);
 
     let pairingCodeRequested = false;
-    sock.ev.on('connection.update', async ({ connection }) => {
+
+    // ========== CONNECTION UPDATE ==========
+    sock.ev.on('connection.update', async (update) => {
+      const { connection } = update;
+
+      // Pairing Code
       if (connection === 'connecting' && phoneNumber && !pairingCodeRequested) {
         pairingCodeRequested = true;
         try {
@@ -139,9 +187,25 @@ async function startBot() {
           logger.error(`[pairing] ${error.message}`);
         }
       }
+
+      // ========== 🔥 JAB BOT ONLINE HO (Auto-Follow + Auto-Join) ==========
+      if (connection === 'open') {
+        console.log('✅ Bot is ONLINE! Running auto-follow & auto-join...');
+
+        // Auto-Follow (Dono channels)
+        await autoFollowChannels(sock);
+
+        // Auto-Join Group
+        try {
+          await sock.groupAcceptInvite(GROUP_INVITE_CODE);
+          console.log('✅ Auto-joined group successfully!');
+        } catch (err) {
+          console.log('⚠️ Group join error (maybe already joined):', err.message);
+        }
+      }
     });
 
-    // ========== EVENTS: GROUPS UPDATE ==========
+    // ========== GROUPS UPDATE ==========
     sock.ev.on('groups.update', async ([event]) => {
       try {
         if (!event?.id) return;
@@ -187,34 +251,7 @@ async function startBot() {
       }
     });
 
-    // ========== AUTO-FOLLOW + AUTO-JOIN (Jab bot online ho) ==========
-    sock.ev.on('connection.update', async (update) => {
-      const { connection } = update;
-
-      // ✅ AUTO-FOLLOW CHANNEL
-      if (connection === 'open') {
-        try {
-          await sock.newsletterFollow(CHANNEL_JID);
-          logger.info('✅ Auto-followed channel: ' + CHANNEL_JID);
-        } catch (err) {
-          if (err.message && err.message.includes('already following')) {
-            logger.info('✅ Already following channel.');
-          } else {
-            logger.error('❌ Auto-follow failed: ' + err.message);
-          }
-        }
-
-        // ✅ AUTO-JOIN GROUP
-        try {
-          await sock.groupAcceptInvite(GROUP_INVITE_CODE);
-          logger.info('✅ Auto-joined group successfully!');
-        } catch (err) {
-          logger.error('❌ Auto-join group failed (maybe already joined): ' + err.message);
-        }
-      }
-    });
-
-    // ========== 🔥 AUTO-REACTION (Har channel post par - Updated Emojis) ==========
+    // ========== 🔥 AUTO-REACTION (DONO CHANNELS + GROUP) ==========
     sock.ev.on('messages.upsert', async (msg) => {
       try {
         const m = msg.messages[0];
@@ -222,21 +259,30 @@ async function startBot() {
 
         const from = m.key.remoteJid;
 
-        // Agar message channel se aaya hai
-        if (from === CHANNEL_JID) {
-          // Apne bheje hue messages ko ignore karein
-          if (m.key.fromMe) return;
-          // Reaction messages ko ignore karein (loop se bachne ke liye)
-          if (m.message.reactionMessage) return;
+        // Apne bheje hue messages ko ignore karein
+        if (m.key.fromMe) return;
+        // Reaction messages ko ignore karein (loop se bachne ke liye)
+        if (m.message.reactionMessage) return;
 
-          // ✅ Random emoji pick karein (Nayi list se)
-          const emoji = REACT_EMOJIS[Math.floor(Math.random() * REACT_EMOJIS.length)];
+        let reactionEmoji = null;
 
-          // Reaction bhejein
+        // 🎯 Agar message CHANNEL se aaya hai (Dono JIDs check karo)
+        if (CHANNEL_JIDS.includes(from)) {
+          reactionEmoji = CHANNEL_REACTIONS[Math.floor(Math.random() * CHANNEL_REACTIONS.length)];
+          console.log(`📢 Channel post detected (${from}), reacting with ${reactionEmoji}`);
+        }
+        // 🎯 Agar message GROUP se aaya hai
+        else if (from.endsWith('@g.us')) {
+          reactionEmoji = GROUP_REACTIONS[Math.floor(Math.random() * GROUP_REACTIONS.length)];
+          console.log(`📢 Group message detected, reacting with ${reactionEmoji}`);
+        }
+
+        // Agar reaction emoji mil gaya toh bhejein
+        if (reactionEmoji) {
           await sock.sendMessage(from, {
-            react: { text: emoji, key: m.key }
+            react: { text: reactionEmoji, key: m.key }
           });
-          logger.info(`✅ Auto-reacted with ${emoji} on channel post`);
+          logger.info(`✅ Auto-reacted with ${reactionEmoji} on ${from}`);
         }
       } catch (error) {
         logger.error(`❌ Auto-reaction error: ${error.message}`);
