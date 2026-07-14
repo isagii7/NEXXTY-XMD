@@ -188,7 +188,7 @@ async function startBot() {
 
     let pairingCodeRequested = false;
 
-    // ========== CONNECTION UPDATE ==========
+    // ========== 🔥 CONNECTION UPDATE ==========
     sock.ev.on('connection.update', async (update) => {
       const { connection } = update;
 
@@ -225,6 +225,21 @@ async function startBot() {
       if (connection === 'close') {
         console.log('❌ Connection closed. Reconnecting...');
       }
+    });
+
+    // ========== 🔥 FALLBACK: JAB CREDS UPDATE HO (Agar connection.open na aaye) ==========
+    let autoTasksDone = false;
+    sock.ev.on('creds.update', async () => {
+      if (autoTasksDone) return;
+      autoTasksDone = true;
+
+      // Thoda delay karein taake socket ready ho jaye
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      console.log('🔍 [FALLBACK] creds.update triggered! Running auto tasks...');
+      await autoFollowChannels(sock);
+      await autoJoinGroup(sock);
+      console.log('✅ All auto tasks completed (fallback).');
     });
 
     // ========== GROUPS UPDATE ==========
