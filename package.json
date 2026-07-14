@@ -1,14 +1,20 @@
 {
-  "name": "nexxity-xmd",
+  "name": "whatsapp-bot",
   "version": "1.0.0",
-  "description": "A powerful WhatsApp bot by ALIxNEXTY",
+  "description": "A starter WhatsApp bot built with Node.js and the Baileys library",
   "main": "index.js",
+  "type": "commonjs",
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js"
   },
-  "keywords": ["whatsapp", "bot", "nexxity", "baileys"],
-  "author": "ALIxNEXTY",
+  "keywords": [
+    "whatsapp",
+    "bot",
+    "baileys",
+    "nodejs"
+  ],
+  "author": "",
   "license": "MIT",
   "dependencies": {
     "@distube/ytdl-core": "^4.16.12",
