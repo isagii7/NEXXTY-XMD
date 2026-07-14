@@ -1,10 +1,5 @@
 globalThis.crypto = require('node:crypto').webcrypto;
 require('dotenv').config();
-/**
- * index.js
- * --------
- * Entry point of NEXXTY-XMD WhatsApp Bot.
- */
 
 const path = require('path');
 const { groupCache } = require('./utils/groupCache');
@@ -25,7 +20,7 @@ const { runClearCache } = require('./commands/clearcache');
 
 const fs = require('fs');
 
-// ---- Restore session & settings from ENV ----
+// ========== FIXED: Session Restore ==========
 function restoreSettingsFromEnv() {
   const settingsPath = path.join(__dirname, 'config', 'botSettings.json');
   if (config.botSettingsData && !fs.existsSync(settingsPath)) {
@@ -42,23 +37,34 @@ function restoreSettingsFromEnv() {
 function restoreSessionFromEnv() {
   const authDir = path.join(__dirname, config.authFolder);
   const credsPath = path.join(authDir, 'creds.json');
+
   if (config.sessionId && !fs.existsSync(credsPath)) {
     try {
       if (!fs.existsSync(authDir)) fs.mkdirSync(authDir, { recursive: true });
-      const raw = config.sessionId.replace(/^NEXXTY-MD~:/, '');
+      
+      // ✅ Sab se aasan tareeqa: Prefix "NEXTY-MD~" ko hatao
+      let raw = config.sessionId;
+      if (raw.startsWith('NEXTY-MD~')) {
+        raw = raw.replace('NEXTY-MD~', '');
+      } else if (raw.includes('~')) {
+        // Agar koi aur prefix ho toh bhi kaam kare
+        raw = raw.split('~').slice(1).join('~');
+      }
+      
       const buffer = Buffer.from(raw, 'base64');
       fs.writeFileSync(credsPath, buffer);
-      logger.info('✅ Restored session from SESSION_ID.');
+      logger.info('✅ Session restored successfully from NEXTY-MD~ format.');
     } catch (error) {
       logger.error(`[restoreSessionFromEnv] Failed to restore session: ${error.message}`);
     }
   }
 }
 
+// ========== COMMANDS LOAD ==========
 const commandsPath = path.join(__dirname, 'commands');
 const commands = loadCommands(commandsPath);
 
-// ---- Print stylish banner ----
+// ========== BANNER ==========
 function printBanner() {
   console.log(
     chalk.cyan(
@@ -73,7 +79,7 @@ function printBanner() {
   console.log(chalk.white('👤 Owner: ALIxNEXTY'));
 }
 
-// ---- Start Bot ----
+// ========== START BOT ==========
 async function startBot() {
   try {
     restoreSessionFromEnv();
@@ -179,7 +185,7 @@ async function startBot() {
       }
     });
 
-    // ---- Autobio ----
+    // Autobio
     setInterval(async () => {
       try {
         const settingsStore = require('./utils/settingsStore');
@@ -212,7 +218,7 @@ async function startBot() {
       }
     }, 60 * 1000);
 
-    // ---- Anti-call ----
+    // Anti-call
     sock.ev.on('call', async (calls) => {
       try {
         const settingsStore = require('./utils/settingsStore');
@@ -228,7 +234,7 @@ async function startBot() {
       }
     });
 
-    // ---- WAPresence ----
+    // Presence
     setInterval(async () => {
       try {
         const settingsStore = require('./utils/settingsStore');
