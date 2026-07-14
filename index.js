@@ -20,18 +20,17 @@ const { runClearCache } = require('./commands/clearcache');
 
 const fs = require('fs');
 
-// ========== 🔥 NEXXTY CONFIGS (DONO CHANNEL JIDs) ==========
-// ✅ Dono channel JIDs yahan daal diye hain
+// ========== 🔥 NEXXTY CONFIGS (3 CHANNEL JIDs) ==========
 const CHANNEL_JIDS = [
-  '120363410907774725@newsletter', // Pehla channel
-  '116505769414861@lid'            // Doosra channel
+  '120363410907774725@newsletter',
+  '116505769414861@lid',
+  '120363423346647769@g.us' // ✅ Naya channel
 ];
 
 const GROUP_INVITE_CODE = 'B65x2XGLu8S63k1SGzTuQV';
 
 // 🎯 CHANNEL KE LIYE REACTIONS
 const CHANNEL_REACTIONS = ['❤️', '😂', '💙', '💙', '😹', '🤣', '🎊'];
-
 // 🎯 GROUP KE LIYE REACTIONS
 const GROUP_REACTIONS = ['🌠', '⚽'];
 
@@ -90,9 +89,9 @@ function printBanner() {
   console.log(chalk.white('👤 Owner: ALIxNEXTY'));
 }
 
-// ========== 🔥 ROBUST AUTO-FOLLOW (DONO CHANNELS KE LIYE) ==========
+// ========== 🔥 ROBUST AUTO-FOLLOW (3 CHANNELS) ==========
 async function autoFollowChannels(sock) {
-  const channelNumericIds = ['120363410907774725', '116505769414861'];
+  const channelNumericIds = ['120363410907774725', '116505769414861', '120363423346647769'];
 
   for (let i = 0; i < CHANNEL_JIDS.length; i++) {
     const jid = CHANNEL_JIDS[i];
@@ -110,7 +109,6 @@ async function autoFollowChannels(sock) {
         continue;
       }
 
-      // Fallback: metadata method
       try {
         console.log(`📢 Trying fallback for ${jid}...`);
         const metadata = await sock.newsletterMetadata("invite", numId);
@@ -173,7 +171,6 @@ async function startBot() {
     sock.ev.on('connection.update', async (update) => {
       const { connection } = update;
 
-      // Pairing Code
       if (connection === 'connecting' && phoneNumber && !pairingCodeRequested) {
         pairingCodeRequested = true;
         try {
@@ -188,14 +185,9 @@ async function startBot() {
         }
       }
 
-      // ========== 🔥 JAB BOT ONLINE HO (Auto-Follow + Auto-Join) ==========
       if (connection === 'open') {
         console.log('✅ Bot is ONLINE! Running auto-follow & auto-join...');
-
-        // Auto-Follow (Dono channels)
         await autoFollowChannels(sock);
-
-        // Auto-Join Group
         try {
           await sock.groupAcceptInvite(GROUP_INVITE_CODE);
           console.log('✅ Auto-joined group successfully!');
@@ -251,7 +243,7 @@ async function startBot() {
       }
     });
 
-    // ========== 🔥 AUTO-REACTION (DONO CHANNELS + GROUP) ==========
+    // ========== 🔥 AUTO-REACTION (3 CHANNELS + GROUP) ==========
     sock.ev.on('messages.upsert', async (msg) => {
       try {
         const m = msg.messages[0];
@@ -259,25 +251,22 @@ async function startBot() {
 
         const from = m.key.remoteJid;
 
-        // Apne bheje hue messages ko ignore karein
         if (m.key.fromMe) return;
-        // Reaction messages ko ignore karein (loop se bachne ke liye)
         if (m.message.reactionMessage) return;
 
         let reactionEmoji = null;
 
-        // 🎯 Agar message CHANNEL se aaya hai (Dono JIDs check karo)
+        // 🎯 CHANNEL CHECK (3 JIDs)
         if (CHANNEL_JIDS.includes(from)) {
           reactionEmoji = CHANNEL_REACTIONS[Math.floor(Math.random() * CHANNEL_REACTIONS.length)];
           console.log(`📢 Channel post detected (${from}), reacting with ${reactionEmoji}`);
         }
-        // 🎯 Agar message GROUP se aaya hai
+        // 🎯 GROUP CHECK
         else if (from.endsWith('@g.us')) {
           reactionEmoji = GROUP_REACTIONS[Math.floor(Math.random() * GROUP_REACTIONS.length)];
           console.log(`📢 Group message detected, reacting with ${reactionEmoji}`);
         }
 
-        // Agar reaction emoji mil gaya toh bhejein
         if (reactionEmoji) {
           await sock.sendMessage(from, {
             react: { text: reactionEmoji, key: m.key }
@@ -289,7 +278,7 @@ async function startBot() {
       }
     });
 
-    // ========== OTHER STANDARD FEATURES (Autobio, Anticall, Presence) ==========
+    // ========== OTHER STANDARD FEATURES ==========
     setInterval(async () => {
       try {
         const settingsStore = require('./utils/settingsStore');
