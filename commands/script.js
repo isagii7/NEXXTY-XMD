@@ -4,7 +4,7 @@ const path = require('path');
 module.exports = {
   name: 'script',
   aliases: ['repo', 'github'],
-  description: 'Shows the ISAAC repository information.',
+  description: 'Shows the NEXTY repository information.',
 
   async execute(sock, msg) {
     const jid = msg.key.remoteJid;
@@ -19,7 +19,7 @@ module.exports = {
     const caption = `
 Hello 👋 *${senderName},*
 
-╔═══〔 🔥 ISAAC TECH 🔥 〕═══╗
+╔═══〔 🔥 NEXTY XMD🔥 〕═══╗
 ║    The Ultimate WhatsApp Bot
 ╚═══════════════════════════╝
 
@@ -40,8 +40,8 @@ Hello 👋 *${senderName},*
 ✓ Deploy properly
 
 ━━━━━━━━━━━━━━━━━━━━━━
-🔥 Made on Earth by Humans!
-❤️ Powered by *ISAAC TECH*
+🔥 Made on Earth by HUMANS s!
+❤️ Powered by *NEXTYxALY*
 ━━━━━━━━━━━━━━━━━━━━━━
 `.trim();
 
