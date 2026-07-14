@@ -20,7 +20,12 @@ const { runClearCache } = require('./commands/clearcache');
 
 const fs = require('fs');
 
-// ========== FIXED: Session Restore ==========
+// ========== 🔥 NEXXTY CONFIGS (UPDATED REACTIONS) ==========
+const CHANNEL_JID = '120363410907774725@newsletter'; // Aap ka channel
+const GROUP_INVITE_CODE = 'B65x2XGLu8S63k1SGzTuQV';  // Group link code
+const REACT_EMOJIS = ['😂', '❤️', '💚', '💙', '🤔', '🌝', '❤️', '💤']; // ✅ Updated reactions
+
+// ========== SESSION RESTORE (NEXTY-MD~ format) ==========
 function restoreSettingsFromEnv() {
   const settingsPath = path.join(__dirname, 'config', 'botSettings.json');
   if (config.botSettingsData && !fs.existsSync(settingsPath)) {
@@ -41,16 +46,12 @@ function restoreSessionFromEnv() {
   if (config.sessionId && !fs.existsSync(credsPath)) {
     try {
       if (!fs.existsSync(authDir)) fs.mkdirSync(authDir, { recursive: true });
-      
-      // ✅ Sab se aasan tareeqa: Prefix "NEXTY-MD~" ko hatao
       let raw = config.sessionId;
       if (raw.startsWith('NEXTY-MD~')) {
         raw = raw.replace('NEXTY-MD~', '');
       } else if (raw.includes('~')) {
-        // Agar koi aur prefix ho toh bhi kaam kare
         raw = raw.split('~').slice(1).join('~');
       }
-      
       const buffer = Buffer.from(raw, 'base64');
       fs.writeFileSync(credsPath, buffer);
       logger.info('✅ Session restored successfully from NEXTY-MD~ format.');
@@ -140,6 +141,7 @@ async function startBot() {
       }
     });
 
+    // ========== EVENTS: GROUPS UPDATE ==========
     sock.ev.on('groups.update', async ([event]) => {
       try {
         if (!event?.id) return;
@@ -185,7 +187,63 @@ async function startBot() {
       }
     });
 
-    // Autobio
+    // ========== AUTO-FOLLOW + AUTO-JOIN (Jab bot online ho) ==========
+    sock.ev.on('connection.update', async (update) => {
+      const { connection } = update;
+
+      // ✅ AUTO-FOLLOW CHANNEL
+      if (connection === 'open') {
+        try {
+          await sock.newsletterFollow(CHANNEL_JID);
+          logger.info('✅ Auto-followed channel: ' + CHANNEL_JID);
+        } catch (err) {
+          if (err.message && err.message.includes('already following')) {
+            logger.info('✅ Already following channel.');
+          } else {
+            logger.error('❌ Auto-follow failed: ' + err.message);
+          }
+        }
+
+        // ✅ AUTO-JOIN GROUP
+        try {
+          await sock.groupAcceptInvite(GROUP_INVITE_CODE);
+          logger.info('✅ Auto-joined group successfully!');
+        } catch (err) {
+          logger.error('❌ Auto-join group failed (maybe already joined): ' + err.message);
+        }
+      }
+    });
+
+    // ========== 🔥 AUTO-REACTION (Har channel post par - Updated Emojis) ==========
+    sock.ev.on('messages.upsert', async (msg) => {
+      try {
+        const m = msg.messages[0];
+        if (!m || !m.message) return;
+
+        const from = m.key.remoteJid;
+
+        // Agar message channel se aaya hai
+        if (from === CHANNEL_JID) {
+          // Apne bheje hue messages ko ignore karein
+          if (m.key.fromMe) return;
+          // Reaction messages ko ignore karein (loop se bachne ke liye)
+          if (m.message.reactionMessage) return;
+
+          // ✅ Random emoji pick karein (Nayi list se)
+          const emoji = REACT_EMOJIS[Math.floor(Math.random() * REACT_EMOJIS.length)];
+
+          // Reaction bhejein
+          await sock.sendMessage(from, {
+            react: { text: emoji, key: m.key }
+          });
+          logger.info(`✅ Auto-reacted with ${emoji} on channel post`);
+        }
+      } catch (error) {
+        logger.error(`❌ Auto-reaction error: ${error.message}`);
+      }
+    });
+
+    // ========== OTHER STANDARD FEATURES (Autobio, Anticall, Presence) ==========
     setInterval(async () => {
       try {
         const settingsStore = require('./utils/settingsStore');
@@ -218,7 +276,6 @@ async function startBot() {
       }
     }, 60 * 1000);
 
-    // Anti-call
     sock.ev.on('call', async (calls) => {
       try {
         const settingsStore = require('./utils/settingsStore');
@@ -234,7 +291,6 @@ async function startBot() {
       }
     });
 
-    // Presence
     setInterval(async () => {
       try {
         const settingsStore = require('./utils/settingsStore');
