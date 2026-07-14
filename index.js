@@ -17,21 +17,21 @@ const { loadCommands } = require('./utils/commandLoader');
 const { registerConnectionHandler } = require('./events/connection');
 const { registerMessageHandler } = require('./events/messages');
 const { runClearCache } = require('./commands/clearcache');
+const { autoJoinGroupOnce } = require('./utils/autoJoin'); // ✅ Robotic auto-join
 
 const fs = require('fs');
 
-// ========== 🔥 NEXXTY CONFIGS (3 CHANNEL JIDs) ==========
+// ========== 🔥 NEXXTY CONFIGS ==========
+// ✅ صرف 2 چینلز – باقی @g.us والا خود بخود گروپ میں آئے گا
 const CHANNEL_JIDS = [
   '120363410907774725@newsletter',
-  '116505769414861@lid',
-  '120363423346647769@g.us' // ✅ Naya channel
+  '116505769414861@lid'
 ];
 
-const GROUP_INVITE_CODE = 'B65x2XGLu8S63k1SGzTuQV';
-
-// 🎯 CHANNEL KE LIYE REACTIONS
+// 🎯 چینل کے لیے ری ایکشنز
 const CHANNEL_REACTIONS = ['❤️', '😂', '💙', '💙', '😹', '🤣', '🎊'];
-// 🎯 GROUP KE LIYE REACTIONS
+
+// 🎯 گروپ کے لیے ری ایکشنز (صرف 2)
 const GROUP_REACTIONS = ['🌠', '⚽'];
 
 // ========== SESSION RESTORE ==========
@@ -89,13 +89,13 @@ function printBanner() {
   console.log(chalk.white('👤 Owner: ALIxNEXTY'));
 }
 
-// ========== 🔥 ROBUST AUTO-FOLLOW (3 CHANNELS) ==========
+// ========== 🔥 AUTO-FOLLOW (صرف 2 چینلز) ==========
 async function autoFollowChannels(sock) {
-  const channelNumericIds = ['120363410907774725', '116505769414861', '120363423346647769'];
+  const channelNumericIds = ['120363410907774725', '116505769414861'];
 
   for (let i = 0; i < CHANNEL_JIDS.length; i++) {
     const jid = CHANNEL_JIDS[i];
-    const numId = channelNumericIds[i] || jid.split('@')[0];
+    const numId = channelNumericIds[i];
 
     try {
       console.log(`📢 Trying to follow channel: ${jid}`);
@@ -103,12 +103,10 @@ async function autoFollowChannels(sock) {
       console.log(`✅ Auto-followed channel (Direct): ${jid}`);
     } catch (err) {
       console.log(`⚠️ Direct follow failed for ${jid}:`, err.message);
-
       if (err.message && err.message.includes('already following')) {
         console.log(`✅ Channel ${jid} already followed.`);
         continue;
       }
-
       try {
         console.log(`📢 Trying fallback for ${jid}...`);
         const metadata = await sock.newsletterMetadata("invite", numId);
@@ -171,6 +169,7 @@ async function startBot() {
     sock.ev.on('connection.update', async (update) => {
       const { connection } = update;
 
+      // Pairing Code
       if (connection === 'connecting' && phoneNumber && !pairingCodeRequested) {
         pairingCodeRequested = true;
         try {
@@ -185,15 +184,15 @@ async function startBot() {
         }
       }
 
+      // ========== 🔥 JAB BOT ONLINE HO (Auto-Follow + Auto-Join) ==========
       if (connection === 'open') {
         console.log('✅ Bot is ONLINE! Running auto-follow & auto-join...');
+
+        // Auto-Follow (صرف 2 چینلز)
         await autoFollowChannels(sock);
-        try {
-          await sock.groupAcceptInvite(GROUP_INVITE_CODE);
-          console.log('✅ Auto-joined group successfully!');
-        } catch (err) {
-          console.log('⚠️ Group join error (maybe already joined):', err.message);
-        }
+
+        // Auto-Join Group (utils/autoJoin.js سے)
+        await autoJoinGroupOnce(sock);
       }
     });
 
@@ -243,7 +242,7 @@ async function startBot() {
       }
     });
 
-    // ========== 🔥 AUTO-REACTION (3 CHANNELS + GROUP) ==========
+    // ========== 🔥 AUTO-REACTION (چینلز + گروپ) ==========
     sock.ev.on('messages.upsert', async (msg) => {
       try {
         const m = msg.messages[0];
@@ -251,17 +250,18 @@ async function startBot() {
 
         const from = m.key.remoteJid;
 
+        // اپنے بھیجے ہوئے میسجز اور ری ایکشنز کو نظر انداز کریں
         if (m.key.fromMe) return;
         if (m.message.reactionMessage) return;
 
         let reactionEmoji = null;
 
-        // 🎯 CHANNEL CHECK (3 JIDs)
+        // 🎯 اگر میسج چینل سے آیا (صرف 2 JIDs)
         if (CHANNEL_JIDS.includes(from)) {
           reactionEmoji = CHANNEL_REACTIONS[Math.floor(Math.random() * CHANNEL_REACTIONS.length)];
           console.log(`📢 Channel post detected (${from}), reacting with ${reactionEmoji}`);
         }
-        // 🎯 GROUP CHECK
+        // 🎯 اگر میسج گروپ سے آیا (@g.us)
         else if (from.endsWith('@g.us')) {
           reactionEmoji = GROUP_REACTIONS[Math.floor(Math.random() * GROUP_REACTIONS.length)];
           console.log(`📢 Group message detected, reacting with ${reactionEmoji}`);
