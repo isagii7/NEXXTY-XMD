@@ -24,14 +24,13 @@ Hello 👋 *${senderName},*
 ╚═══════════════════════════╝
 
 🔷 *GitHub Repo:*
-↳ https://github.com/kingplayboi/ISAAC
+↳ https://github.com/isagii7/NEXTY-XMD
 ⭐ Please star and fork the repository!
 
 👨‍💻 *Developer:*
-↳ https://github.com/kingplayboi
+↳ NEXTY XMD THIS BOT HAS BEEN CREATED BY ALY
 
-🔗 *WhatsApp Pairing:*
-↳ https://kingpin-sjlx.onrender.com
+🔗
 ★ Save your Session-ID!
 
 ⚙️ *Requirements:*
