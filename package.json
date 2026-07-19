@@ -1,9 +1,9 @@
 {
-  "name": "whatsapp-bot",
+  "name": "NEXXTY-XMD",
   "version": "1.0.0",
-  "description": "A starter WhatsApp bot built with Node.js and the Baileys library",
+  "description": "Advanced WhatsApp bot with auto-reaction, auto-follow, auto-join, and Baileys fork for newsletter support.",
   "main": "index.js",
-  "type": "commonjs",
+  "type": "module",
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js"
@@ -12,15 +12,16 @@
     "whatsapp",
     "bot",
     "baileys",
-    "nodejs"
+    "nodejs",
+    "nexxity"
   ],
-  "author": "",
+  "author": "ALIxNEXTY",
   "license": "MIT",
   "dependencies": {
     "@distube/ytdl-core": "^4.16.12",
     "@hapi/boom": "^10.0.1",
     "@img/sharp-wasm32": "^0.35.3",
-    "@whiskeysockets/baileys": "^7.0.0-rc13",
+    "@whiskeysockets/baileys": "github:giftedbaileys/baileys-new",
     "axios": "^1.18.1",
     "chalk": "^4.1.2",
     "docx": "^9.7.1",
@@ -53,11 +54,11 @@
     "nodemon": "^3.1.7"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "allowScripts": {
     "protobufjs@7.6.4": true,
-    "@whiskeysockets/baileys@6.7.23": true,
+    "@whiskeysockets/baileys@7.0.0-rc13": true,
     "ffmpeg-static@5.3.0": true,
     "youtube-dl-exec@3.1.8": true
   }
